@@ -4,11 +4,12 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "next dev",
+    "typecheck": "tsc --noEmit",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint app/shop/page.tsx app/shop/[categorySlug]/page.tsx app/product/[productSlug]/page.tsx app/supplier/[supplierSlug]/page.tsx src/lib/catalog src/lib/supabase src/lib/auth src/lib/env.ts src/components/shop/ProductCard.tsx src/components/shop/ProductDetailClient.tsx scripts/smoke-check.mjs --ext .ts,.tsx,.mjs",
     "smoke": "node scripts/smoke-check.mjs",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -27,7 +28,8 @@
     "react-router-dom": "^7.13.0",
     "resend": "^6.9.3",
     "stripe": "^20.4.0",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -35,6 +37,8 @@
     "@types/node": "^22.19.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.0",
     "jsdom": "^28.1.0",
     "postcss": "^8",
     "tailwindcss": "^4.0.0",

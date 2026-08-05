@@ -46,7 +46,9 @@
       "mcp__claude_ai_Supabase__execute_sql",
       "mcp__claude_ai_Supabase__apply_migration",
       "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}; toasts=[k for k in deps if any\\(x in k for x in ['toast','sonner','notify','alert']\\)]; print\\('Toast libs:', toasts\\)\")",
-      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}; stripe=[k for k in deps if 'stripe' in k]; print\\('Stripe:', stripe\\)\")"
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); deps={**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}; stripe=[k for k in deps if 'stripe' in k]; print\\('Stripe:', stripe\\)\")",
+      "Bash(cd /d C:\\\\Ouroz)",
+      "Bash(dir /B)"
     ],
     "additionalDirectories": [
       "C:\\Users\\mehdi\\.claude\\skills\\ui-styling"

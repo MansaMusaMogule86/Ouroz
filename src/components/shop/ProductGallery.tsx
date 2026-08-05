@@ -4,6 +4,7 @@
  */
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 import type { ProductImage } from '@/types/shop';
 
@@ -32,10 +33,14 @@ export default function ProductGallery({ images, productName }: Props) {
       {/* Main image */}
       <div className="relative aspect-square rounded-3xl overflow-hidden"
            style={{ background: 'var(--color-sahara-dark)' }}>
-        <img
+        <Image
           src={active.url}
           alt={active.alt ?? productName}
-          className="w-full h-full object-cover"
+          fill
+          priority={activeIdx === 0}
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover"
+          unoptimized
         />
 
         {/* Halo (design_standards.md Rule #2) */}
@@ -72,7 +77,14 @@ export default function ProductGallery({ images, productName }: Props) {
                   : 'opacity-45 hover:opacity-70'
               }`}
             >
-              <img src={img.url} alt={img.alt ?? ''} className="w-full h-full object-cover" />
+              <Image
+                src={img.url}
+                alt={img.alt ?? ''}
+                fill
+                sizes="64px"
+                className="object-cover"
+                unoptimized
+              />
               {i === activeIdx && (
                 <div
                   className="absolute inset-0 rounded-xl pointer-events-none"

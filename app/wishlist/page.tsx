@@ -10,8 +10,9 @@ interface WishlistProduct {
     name: string;
     slug: string;
     base_price: number;
-    compare_price: number | null;
+    compare_at_price: number | null;
     image_urls: string[];
+    thumbnail_url: string | null;
     variant_id: string;
     stock: number;
 }
@@ -47,7 +48,8 @@ export default function WishlistPage() {
         const { data } = await supabase
             .from('products')
             .select(`
-                id, name, slug, base_price, compare_price, image_urls,
+                id, name, slug, base_price, compare_at_price, image_urls,
+                thumbnail_url,
                 variants:product_variants(id, retail_price, stock_quantity, is_active)
             `)
             .in('id', productIds)
@@ -55,7 +57,7 @@ export default function WishlistPage() {
 
         const items: WishlistProduct[] = (data ?? []).map((p: {
             id: string; name: string; slug: string; base_price: number;
-            compare_price: number | null; image_urls: string[];
+            compare_at_price: number | null; image_urls: string[]; thumbnail_url: string | null;
             variants: { id: string; stock_quantity: number; is_active: boolean }[];
         }) => {
             const v = p.variants?.find(v => v.is_active) ?? p.variants?.[0];
@@ -64,8 +66,9 @@ export default function WishlistPage() {
                 name: p.name,
                 slug: p.slug,
                 base_price: p.base_price,
-                compare_price: p.compare_price,
+                compare_at_price: p.compare_at_price,
                 image_urls: p.image_urls ?? [],
+                thumbnail_url: p.thumbnail_url,
                 variant_id: v?.id ?? '',
                 stock: v?.stock_quantity ?? 0,
             };
@@ -139,11 +142,11 @@ export default function WishlistPage() {
                             <div key={product.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden group">
                                 <Link href={`/product/${product.slug}`} className="block">
                                     <div className="aspect-square bg-gray-100 overflow-hidden">
-                                        {product.image_urls[0] ? (
-                                            <img src={product.image_urls[0]} alt={product.name}
+                                        {(product.thumbnail_url ?? product.image_urls[0]) ? (
+                                            <img src={product.thumbnail_url ?? product.image_urls[0]} alt={product.name}
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-gray-300 text-4xl">&#9671;</div>
+                                            <img src="/images/catalog/atlas-souk/shared/wishlist-fallback.svg" alt="Wishlist image placeholder" className="w-full h-full object-cover" />
                                         )}
                                     </div>
                                 </Link>
@@ -153,8 +156,8 @@ export default function WishlistPage() {
                                     </Link>
                                     <div className="flex items-center gap-2 mt-1">
                                         <span className="font-bold text-[var(--color-charcoal)]">AED {product.base_price.toFixed(2)}</span>
-                                        {product.compare_price && (
-                                            <span className="text-sm text-gray-400 line-through">AED {product.compare_price.toFixed(2)}</span>
+                                        {product.compare_at_price && (
+                                            <span className="text-sm text-gray-400 line-through">AED {product.compare_at_price.toFixed(2)}</span>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-2 mt-3">

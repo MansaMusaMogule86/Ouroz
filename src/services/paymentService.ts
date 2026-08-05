@@ -9,17 +9,20 @@
 
 import Stripe from 'stripe';
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
+import { getEnv } from '@/lib/env';
 
 function getStripe(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
+  const env = getEnv();
+  const key = env.STRIPE_SECRET_KEY;
   if (!key) throw new Error('STRIPE_SECRET_KEY is not set');
   return new Stripe(key, { apiVersion: '2026-02-25.clover' });
 }
 
 function getAdminClient() {
+  const env = getEnv();
   return createSupabaseAdmin(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY,
   );
 }
 
@@ -33,7 +36,8 @@ export function constructWebhookEvent(
   rawBody: string,
   signature: string,
 ): Stripe.Event {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const env = getEnv();
+  const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) throw new Error('STRIPE_WEBHOOK_SECRET is not set');
   return getStripe().webhooks.constructEvent(rawBody, signature, webhookSecret);
 }
@@ -71,6 +75,8 @@ export async function createPaymentIntent(
         order_id: orderId,
         ...metadata,
       },
+    }, {
+      idempotencyKey: `order:${orderId}:payment-intent`,
     });
 
     // Persist the payment intent ID on the order so we can look it up in webhooks
@@ -143,7 +149,7 @@ export async function handlePaymentFailure(paymentIntentId: string): Promise<voi
       .single();
 
     if (order) {
-      await db.from('orders').update({ status: 'payment_failed' }).eq('id', order.id);
+      await db.from('orders').update({ status: 'failed' }).eq('id', order.id);
     }
   } catch (err) {
     console.error('[payment] handlePaymentFailure failed:', err);

@@ -1,69 +1,111 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# OUROZ
 
-# OUROZ - The Amazigh Source
+Premium Moroccan B2B/B2C commerce platform built with Next.js App Router and Supabase.
 
-B2B/B2C marketplace for Moroccan artisan products, powered by Google Gemini AI.
+## Tech Stack
 
-## Run Locally
+- Next.js 16 + React 19 + TypeScript
+- Supabase (Postgres, Auth, Storage, RLS)
+- Stripe payments (PaymentIntent + webhooks)
+- Vitest + Testing Library
 
-**Prerequisites:** Node.js 18+
+## Local Setup
 
-### 1. Install dependencies
+### 1. Install
 
 ```bash
-# Frontend
 npm install
-
-# Backend
-cd server && npm install
 ```
 
-### 2. Set up your API key
+### 2. Configure environment
 
-Copy your Gemini API key to `server/.env`:
+Create `.env.local` with required variables:
 
 ```bash
-cp server/.env.example server/.env
-# Then edit server/.env and add your key
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+RESEND_API_KEY=
+GEMINI_API_KEY=
 ```
 
-Get your API key at: <https://aistudio.google.com/apikey>
+Server secrets must never be exposed in client code.
 
-### 3. Run the app
-
-**Terminal 1 - Start the backend:**
-
-```bash
-cd server
-npm run dev
-```
-
-**Terminal 2 - Start the frontend:**
+### 3. Run development server
 
 ```bash
 npm run dev
 ```
 
-Open <http://localhost:3000> in your browser.
+## Database Migrations
 
-## Architecture
+Migrations live in `supabase/migrations` and must be applied in order.
 
-- **Frontend**: Next.js App Router + React 19 + Tailwind CSS
-- **Backend**: Supabase (Postgres + Auth + Storage) and route handlers
-- **AI**: Google Gemini (images, video, voice, chat)
+- `001` to `007`: core OUROZ schema and policies
+- `008_atlas_souk_catalog.sql`: Atlas Souk supplier, category, product seed, readiness and compliance extensions
 
-## Quick Health Check
+## Atlas Souk Catalog Architecture
 
-After starting dev server, run:
+Catalog source of truth is in `src/lib/catalog/atlasSoukCatalog.ts`:
+
+- Supplier: `atlas-souk`
+- Categories: `kitchen-accessories`, `skin-care`, `groceries`
+- Exact total products: 45
+- SKU pattern: `BM-KIT-*`, `BM-SKN-*`, `BM-GRO-*`
+- Compliance flags and data-quality warnings included as non-blocking readiness metadata
+
+## Placeholder Image Architecture
+
+All placeholders are local SVG assets (no remote dependencies):
+
+- Supplier: `public/images/catalog/atlas-souk/supplier/`
+- Categories: `public/images/catalog/atlas-souk/categories/`
+- Products: category-specific folders under `public/images/catalog/atlas-souk/`
+- Shared fallbacks: `public/images/catalog/atlas-souk/shared/`
+
+Replace placeholders by preserving file paths to avoid UI/layout regressions.
+
+## Key Routes
+
+- Shop: `/shop`
+- Category pages: `/shop/kitchen-accessories`, `/shop/skin-care`, `/shop/groceries`
+- Product pages: `/product/[productSlug]`
+- Supplier storefront: `/supplier/atlas-souk`
+- Cart: `/cart`
+- Wishlist: `/wishlist`
+
+## Validation and Security
+
+- Query params validated via Zod (`src/lib/catalog/catalogQueryParams.ts`)
+- Runtime-specific Supabase clients:
+  - `src/lib/supabase/client.ts`
+  - `src/lib/supabase/server.ts`
+  - `src/lib/supabase/admin.ts`
+  - `src/lib/supabase/middleware.ts`
+- Server auth guards in `src/lib/auth/guards.ts`
+- Stripe webhook signature verification in `app/api/stripe/webhook/route.ts`
+
+## Quality Commands
 
 ```bash
+npm run typecheck
+npm run lint
+npm run test
+npm run build
 npm run smoke
 ```
 
-If your app is on a different port:
+`npm run smoke` checks route availability for key catalog flows. Override host with:
 
 ```bash
 BASE_URL=http://localhost:3001 npm run smoke
 ```
+
+## Notes on Catalog Compliance
+
+- Cosmetic names such as `Whitening Cream` and `Whitening Soap` are retained from supplier inputs but flagged for compliance review.
+- Food safety fields are intentionally marked pending when supplier-verified data is not yet available.
+- Generic product names are flagged in non-blocking quality metadata for refinement.

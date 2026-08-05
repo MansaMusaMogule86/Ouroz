@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 /* ------------------------------------------------------------------ */
 /*  Authentic Moroccan Provisions — premium landing                    */
@@ -11,8 +11,8 @@ type Category = {
     label: string;
     title: string;
     chipText: string;
-    icon: JSX.Element;
-    chipIcon: JSX.Element;
+    icon: ReactNode;
+    chipIcon: ReactNode;
     gradient: string;
     glow: string;
 };

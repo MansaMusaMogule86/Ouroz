@@ -1,0 +1,20 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='1200' viewBox='0 0 1200 1200' role='img' aria-labelledby='title desc'>
+  <title>param($m) $m.Value.ToUpper()afi param($m) $m.Value.ToUpper()late param($m) $m.Value.ToUpper()1cm</title>
+  <desc>Kitchen Accessories placeholder for OUROZ Atlas Souk catalog.</desc>
+  <defs>
+    <linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#FDF8F0'/>
+      <stop offset='100%' stop-color='#E8D5BE'/>
+    </linearGradient>
+    <pattern id='tile' width='64' height='64' patternUnits='userSpaceOnUse'>
+      <path d='M32 0L64 32L32 64L0 32Z' fill='none' stroke='#2A2016' stroke-opacity='0.06' stroke-width='1'/>
+    </pattern>
+  </defs>
+  <rect width='1200' height='1200' fill='url(#bg)'/>
+  <rect width='1200' height='1200' fill='url(#tile)'/>
+  <path d='M150 990 Q600 320 1050 990 Z' fill='#2A2016' fill-opacity='0.06'/>
+  <circle cx='600' cy='530' r='210' fill='#8B1A4A' fill-opacity='0.16'/>
+  <path d='M480 600 h240 v130 h-240 z M430 520 h340 v30 h-340 z' fill='#8B1A4A' fill-opacity='0.72'/><ellipse cx='600' cy='560' rx='200' ry='75' fill='none' stroke='#8B1A4A' stroke-width='12' stroke-opacity='0.65'/>
+  <text x='600' y='950' text-anchor='middle' fill='#2A2016' font-size='54' font-family='Manrope, Arial, sans-serif' letter-spacing='1.2'>param($m) $m.Value.ToUpper()afi param($m) $m.Value.ToUpper()late param($m) $m.Value.ToUpper()1cm</text>
+  <text x='600' y='1000' text-anchor='middle' fill='#2A2016' fill-opacity='0.65' font-size='30' font-family='Manrope, Arial, sans-serif'>Kitchen Accessories</text>
+</svg>

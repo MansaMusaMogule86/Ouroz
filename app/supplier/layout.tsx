@@ -16,8 +16,14 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
     const router = useRouter();
     const [supplier, setSupplier] = useState<SupplierData | null>(null);
     const [loading, setLoading] = useState(true);
+    const isPublicStorefront = pathname === '/supplier/atlas-souk' || pathname === '/supplier/danat-al-jazeera';
 
     useEffect(() => {
+        if (isPublicStorefront) {
+            setLoading(false);
+            return;
+        }
+
         (async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) { router.push('/auth/login?return=/supplier/dashboard'); return; }
@@ -36,7 +42,7 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
             setSupplier(data);
             setLoading(false);
         })();
-    }, [pathname, router]);
+    }, [isPublicStorefront, pathname, router]);
 
     const navItems = [
         { href: '/supplier/dashboard', label: 'Dashboard' },
@@ -48,8 +54,8 @@ export default function SupplierLayout({ children }: { children: React.ReactNode
         return <div className="min-h-screen bg-[var(--color-sahara)] flex items-center justify-center text-[var(--color-charcoal)]/50">Loading...</div>;
     }
 
-    // Allow register page without layout
-    if (pathname === '/supplier/register') {
+    // Allow public storefront and register page without portal layout
+    if (pathname === '/supplier/register' || isPublicStorefront) {
         return <>{children}</>;
     }
 

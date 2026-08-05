@@ -6,9 +6,11 @@
 
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { cookies } from 'next/headers';
 import type { LangCode } from '@/types/shop';
 import { getCategories, getCategoryBySlug, getProductCards } from '@/lib/shop-queries';
+import { parseCatalogQueryParams } from '@/lib/catalog/catalogQueryParams';
 import CategoryNav from '@/components/shop/CategoryNav';
 import ShopClientShell from '@/components/shop/ShopClientShell';
 
@@ -16,7 +18,7 @@ export const revalidate = 60;
 
 interface Props {
     params: Promise<{ categorySlug: string }>;
-    searchParams: Promise<{ sub?: string; q?: string; page?: string }>;
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export async function generateMetadata({ params }: Props) {
@@ -26,14 +28,19 @@ export async function generateMetadata({ params }: Props) {
     const category = await getCategoryBySlug(categorySlug, lang);
     if (!category) return { title: 'Category Not Found' };
     return {
-        title: `${category.name} – OUROZ Shop`,
+        title: `${category.name} | Atlas Souk | OUROZ`,
         description: category.description ?? `Shop ${category.name} at OUROZ`,
+        alternates: {
+            canonical: `/shop/${categorySlug}`,
+        },
     };
 }
 
 export default async function CategoryPage({ params, searchParams }: Props) {
     const { categorySlug } = await params;
-    const { sub: subcategorySlug } = await searchParams;
+    const rawSearchParams = await searchParams;
+    const parsed = parseCatalogQueryParams(rawSearchParams);
+    const subcategorySlug = typeof rawSearchParams.sub === 'string' ? rawSearchParams.sub : undefined;
 
     const cookieStore = await cookies();
     const lang = (cookieStore.get('ouroz_lang')?.value ?? 'en') as LangCode;
@@ -41,10 +48,47 @@ export default async function CategoryPage({ params, searchParams }: Props) {
     const [category, categories, { products, total }] = await Promise.all([
         getCategoryBySlug(categorySlug, lang),
         getCategories(lang),
-        getProductCards({ lang, categorySlug, subcategorySlug, limit: 48 }),
+        getProductCards({
+            lang,
+            categorySlug,
+            subcategorySlug,
+            search: parsed.q,
+            stock: parsed.stock,
+            minPrice: parsed.minPrice,
+            maxPrice: parsed.maxPrice,
+            featuredOnly: parsed.featured === 'only',
+            sortBy:
+                parsed.sort === 'price-asc' ? 'price_asc'
+                : parsed.sort === 'price-desc' ? 'price_desc'
+                : parsed.sort === 'name-asc' ? 'name'
+                : parsed.sort === 'name-desc' ? 'name_desc'
+                : parsed.sort === 'newest' ? 'newest'
+                : 'featured',
+            limit: parsed.perPage,
+            offset: (parsed.page - 1) * parsed.perPage,
+        }),
     ]);
 
     if (!category) notFound();
+
+    const breadcrumbSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {
+                '@type': 'ListItem',
+                position: 1,
+                name: 'Shop',
+                item: '/shop',
+            },
+            {
+                '@type': 'ListItem',
+                position: 2,
+                name: category.name,
+                item: `/shop/${category.slug}`,
+            },
+        ],
+    };
 
     const activeSubcategory = subcategorySlug
         ? category.subcategories?.find(s => s.slug === subcategorySlug)
@@ -52,12 +96,16 @@ export default async function CategoryPage({ params, searchParams }: Props) {
 
     return (
         <div className="space-y-6">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+            />
 
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-sm font-body" style={{ color: 'var(--color-charcoal)', opacity: 0.4 }}>
-                <a href="/shop" className="hover:opacity-70 transition-opacity">
+                <Link href="/shop" className="hover:opacity-70 transition-opacity">
                     {lang === 'ar' ? 'المتجر' : lang === 'fr' ? 'Boutique' : 'Shop'}
-                </a>
+                </Link>
                 <span>/</span>
                 <span style={{ opacity: 0.7, color: 'var(--color-charcoal)' }}>{category.name}</span>
                 {activeSubcategory && (

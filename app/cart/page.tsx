@@ -56,15 +56,13 @@ export default function CartPage() {
                             >
                                 <div className="relative w-20 h-20 flex-shrink-0 rounded-xl
                                                 overflow-hidden bg-[var(--color-sahara)]">
-                                    {item.image_url && (
-                                        <Image
-                                            src={item.image_url}
-                                            alt={item.product_name}
-                                            fill
-                                            className="object-cover"
-                                            sizes="80px"
-                                        />
-                                    )}
+                                    <Image
+                                        src={item.image_url ?? '/images/catalog/atlas-souk/shared/cart-fallback.svg'}
+                                        alt={item.product_name}
+                                        fill
+                                        className="object-cover"
+                                        sizes="80px"
+                                    />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <Link

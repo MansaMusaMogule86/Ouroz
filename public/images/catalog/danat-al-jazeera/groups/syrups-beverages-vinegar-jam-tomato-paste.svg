@@ -1,0 +1,15 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800' role='img' aria-labelledby='title desc'>
+  <title>Syrups, beverages, vinegar, jam, and tomato paste</title>
+  <desc>Syrups, beverages, vinegar, jam, and tomato paste placeholder image from supplier catalog grouping.</desc>
+  <defs>
+    <linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#F5F1EA'/>
+      <stop offset='100%' stop-color='#DCC8A6'/>
+    </linearGradient>
+  </defs>
+  <rect width='1200' height='800' fill='url(#bg)'/>
+  <circle cx='940' cy='170' r='140' fill='#8B1A4A' fill-opacity='0.14'/>
+  <rect x='120' y='170' width='960' height='460' rx='40' fill='#2A2016' fill-opacity='0.08'/>
+  <text x='600' y='390' text-anchor='middle' fill='#2A2016' font-size='52' font-family='Manrope, Arial, sans-serif'>Syrups, beverages, vinegar, jam, and tomato paste</text>
+  <text x='600' y='450' text-anchor='middle' fill='#2A2016' fill-opacity='0.72' font-size='28' font-family='Manrope, Arial, sans-serif'>Danat Al Jazeera Catalog Placeholder</text>
+</svg>

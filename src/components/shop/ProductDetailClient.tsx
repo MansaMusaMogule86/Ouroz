@@ -5,8 +5,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import type { Product, ProductVariant, LangCode } from '@/types/shop';
 import { useCart } from '@/contexts/CartContext';
+import { isInWishlist, toggleWishlist } from '@/lib/wishlist';
 
 interface Props {
   product: Product;
@@ -27,9 +29,10 @@ const T = {
 export default function ProductDetailClient({ product, defaultVariant, lang }: Props) {
   const { addItem, setIsOpen } = useCart();
   const [variant, setVariant]     = useState<ProductVariant | null>(defaultVariant);
-  const [qty, setQty]             = useState(1);
+  const [qty, setQty]             = useState(product.minimum_order_quantity ?? 1);
   const [adding, setAdding]       = useState(false);
   const [justAdded, setJustAdded] = useState(false);
+  const [wishlisted, setWishlisted] = useState(isInWishlist(product.id));
 
   const price      = variant?.price      ?? product.price;
   const compareAt  = variant?.compare_at_price ?? product.compare_at_price;
@@ -61,14 +64,23 @@ export default function ProductDetailClient({ product, defaultVariant, lang }: P
 
       {/* ── Breadcrumb / category ── */}
       <div className="flex items-center gap-2 flex-wrap">
+        {product.supplier && (
+          <Link
+            href={`/supplier/${product.supplier.slug}`}
+            className="text-[10px] uppercase tracking-[0.18em] font-body transition-colors"
+            style={{ color: 'var(--color-charcoal)', opacity: 0.35 }}
+          >
+            {product.supplier.name}
+          </Link>
+        )}
         {product.category && (
-          <a
+          <Link
             href={`/shop/${product.category.slug}`}
             className="text-[10px] uppercase tracking-[0.18em] font-body transition-colors"
             style={{ color: 'var(--color-charcoal)', opacity: 0.35 }}
           >
             {product.category.name}
-          </a>
+          </Link>
         )}
         {product.badge && (
           <span
@@ -162,7 +174,7 @@ export default function ProductDetailClient({ product, defaultVariant, lang }: P
         {/* Qty stepper */}
         <div className="flex items-center rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(42,32,22,0.15)' }}>
           <button
-            onClick={() => setQty(q => Math.max(1, q - 1))}
+            onClick={() => setQty(q => Math.max(product.minimum_order_quantity ?? 1, q - 1))}
             className="px-4 py-3.5 text-sm font-body transition-colors hover:bg-[var(--color-sahara-dark)]"
             style={{ color: 'var(--color-charcoal)', opacity: 0.45 }}
           >
@@ -179,6 +191,20 @@ export default function ProductDetailClient({ product, defaultVariant, lang }: P
             +
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setWishlisted(toggleWishlist(product.id))}
+          className="px-4 rounded-xl border text-sm"
+          style={{
+            borderColor: 'rgba(42,32,22,0.15)',
+            color: wishlisted ? 'var(--color-imperial)' : 'var(--color-charcoal)',
+            background: 'rgba(255,255,255,0.6)',
+          }}
+          aria-label={wishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+        >
+          {wishlisted ? '♥ Saved' : '♡ Wishlist'}
+        </button>
 
         {/* Add to cart */}
         <button
@@ -211,6 +237,10 @@ export default function ProductDetailClient({ product, defaultVariant, lang }: P
 
       {/* ── Product meta ── */}
       <div className="pt-5 border-t space-y-2.5" style={{ borderColor: 'rgba(42,32,22,0.08)' }}>
+
+        {typeof product.minimum_order_quantity === 'number' && (
+          <MetaRow label="Min Qty">{product.minimum_order_quantity}</MetaRow>
+        )}
 
         {product.origin && (
           <MetaRow label={T.origin[lang]}>
@@ -246,6 +276,49 @@ export default function ProductDetailClient({ product, defaultVariant, lang }: P
           <p className="text-sm font-body leading-[1.85] whitespace-pre-line" style={{ color: 'var(--color-charcoal)', opacity: 0.52 }}>
             {product.description}
           </p>
+        </div>
+      )}
+
+      {product.care_information && (
+        <div className="pt-5 border-t" style={{ borderColor: 'rgba(42,32,22,0.08)' }}>
+          <h2 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-charcoal)' }}>Care Information</h2>
+          <p className="text-sm font-body leading-[1.8]" style={{ color: 'var(--color-charcoal)', opacity: 0.52 }}>
+            {product.care_information}
+          </p>
+        </div>
+      )}
+
+      {product.storage_information && (
+        <div className="pt-5 border-t" style={{ borderColor: 'rgba(42,32,22,0.08)' }}>
+          <h2 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-charcoal)' }}>Storage Information</h2>
+          <p className="text-sm font-body leading-[1.8]" style={{ color: 'var(--color-charcoal)', opacity: 0.52 }}>
+            {product.storage_information}
+          </p>
+        </div>
+      )}
+
+      {product.shipping_information && (
+        <div className="pt-5 border-t" style={{ borderColor: 'rgba(42,32,22,0.08)' }}>
+          <h2 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-charcoal)' }}>Shipping & Returns</h2>
+          <p className="text-sm font-body leading-[1.8]" style={{ color: 'var(--color-charcoal)', opacity: 0.52 }}>
+            {product.shipping_information}
+          </p>
+          <p className="text-xs mt-2" style={{ color: 'var(--color-charcoal)', opacity: 0.45 }}>
+            {product.return_eligible ? 'Return eligible under OUROZ return policy classification pending supplier verification.' : 'This product is currently marked as non-returnable.'}
+          </p>
+        </div>
+      )}
+
+      {product.requires_compliance_review && product.compliance_notes && (
+        <div className="pt-5 border-t" style={{ borderColor: 'rgba(42,32,22,0.08)' }}>
+          <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(139,26,74,0.25)', background: 'rgba(139,26,74,0.05)' }}>
+            <h2 className="text-sm font-semibold mb-1" style={{ color: 'var(--color-imperial)' }}>
+              Compliance Review Placeholder
+            </h2>
+            <p className="text-sm" style={{ color: 'var(--color-charcoal)', opacity: 0.62 }}>
+              {product.compliance_notes}
+            </p>
+          </div>
         </div>
       )}
 

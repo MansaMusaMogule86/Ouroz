@@ -1,18 +1,10 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient as createRuntimeClient, supabaseClient } from '@/lib/supabase/client';
 
 export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  return createRuntimeClient();
 }
 
 /**
- * Singleton browser client — used by client components and API routes
- * that verify auth tokens directly (no cookie session needed).
- * Safe for import in 'use client' files.
+ * Singleton browser client — used by client components only.
  */
-export const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+export const supabase = supabaseClient;

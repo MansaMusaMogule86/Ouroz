@@ -3,10 +3,16 @@ import type { Brand, Category } from '@/types/shop';
 import { getProductCards } from '@/lib/shop-queries';
 import type { PriceTier } from '@/lib/pricing';
 
+const fallbackUrl = 'https://placeholder-project.supabase.co';
+const fallbackAnon = 'placeholder-anon-key';
+
 function supabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+
   return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    url || fallbackUrl,
+    anonKey || fallbackAnon
   );
 }
 

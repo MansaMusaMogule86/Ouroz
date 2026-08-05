@@ -57,14 +57,24 @@ export interface ProductCard {
   id: string;
   name: string;
   slug: string;
+  sku?: string;
   price: number;
   compare_at_price?: number;
   currency: string;
   image_url?: string;
+  thumbnail_url?: string;
+  supplier_name?: string;
+  supplier_slug?: string;
+  tags?: string[];
+  stock_status?: 'in_stock' | 'low_stock' | 'out_of_stock';
+  inventory_quantity?: number;
+  is_featured?: boolean;
+  requires_compliance_review?: boolean;
   /** Slug of the direct category this product belongs to */
   category_slug?: string;
   /** Slug of the brand this product belongs to */
   brand_slug?: string;
+  category_name?: string;
   origin?: string;
   in_stock: boolean;
   badge?: string;
@@ -75,8 +85,18 @@ export interface Product extends ProductCard {
   description?: string;
   images: ProductImage[];
   variants: ProductVariant[];
+  care_information?: string;
+  shipping_information?: string;
+  storage_information?: string;
+  return_eligible?: boolean;
+  minimum_order_quantity?: number;
+  wholesale_ready?: boolean;
+  product_review_status?: 'pending' | 'approved';
+  compliance_review_status?: 'pending' | 'approved';
+  compliance_notes?: string;
   brand?: { name: string; slug: string };
   category?: { name: string; slug: string };
+  supplier?: { name: string; slug: string };
   weight?: string;
   origin_region?: string;
   certifications?: string[];
