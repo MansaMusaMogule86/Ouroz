@@ -9,6 +9,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import type { ProductCard as ProductCardType } from '@/types/shop';
 import { isInWishlist, toggleWishlist } from '@/lib/wishlist';
 import { useCart } from '@/contexts/CartContext';
@@ -20,8 +21,14 @@ interface Props {
 export default function ProductCard({ product }: Props) {
   const { addItem } = useCart();
   const [wishlisted, setWishlisted] = useState(() => isInWishlist(product.id));
+  const pathname = usePathname();
 
-  const discount = product.compare_at_price && product.compare_at_price > product.price
+  const isB2B = product.supplier_slug === 'danat-al-jazeera' || 
+                product.price <= 0 || 
+                pathname?.startsWith('/wholesale') || 
+                pathname?.startsWith('/trade');
+
+  const discount = !isB2B && product.compare_at_price && product.compare_at_price > product.price
     ? Math.round((1 - product.price / product.compare_at_price) * 100)
     : null;
 
@@ -134,53 +141,74 @@ export default function ProductCard({ product }: Props) {
             {(product.supplier_name ?? 'Atlas Souk')} • {(product.category_name ?? 'Moroccan Collection')}
           </p>
           <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span
-              className="font-body font-bold"
-              style={{ fontSize: 15, color: 'var(--color-charcoal)' }}
-            >
-              {product.price.toFixed(0)}
-            </span>
-            <span
-              className="font-body"
-              style={{ fontSize: 11, color: 'rgba(42,32,22,0.45)' }}
-            >
-              {product.currency ?? 'AED'}
-            </span>
-            {product.compare_at_price && product.compare_at_price > product.price && (
-              <span
-                className="font-body line-through"
-                style={{ fontSize: 11, color: 'rgba(42,32,22,0.28)' }}
-              >
-                {product.compare_at_price.toFixed(0)}
+            {isB2B ? (
+              <span className="font-body font-bold text-xs uppercase tracking-wider text-[var(--color-gold-muted)]">
+                Request Price
               </span>
+            ) : (
+              <>
+                <span
+                  className="font-body font-bold"
+                  style={{ fontSize: 15, color: 'var(--color-charcoal)' }}
+                >
+                  {product.price.toFixed(0)}
+                </span>
+                <span
+                  className="font-body"
+                  style={{ fontSize: 11, color: 'rgba(42,32,22,0.45)' }}
+                >
+                  {product.currency ?? 'AED'}
+                </span>
+                {product.compare_at_price && product.compare_at_price > product.price && (
+                  <span
+                    className="font-body line-through"
+                    style={{ fontSize: 11, color: 'rgba(42,32,22,0.28)' }}
+                  >
+                    {product.compare_at_price.toFixed(0)}
+                  </span>
+                )}
+              </>
             )}
           </div>
           <p className="text-[10px] mt-2" style={{ color: 'rgba(42,32,22,0.45)' }}>
             {stockLabel}
           </p>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              addItem({
-                id: product.id,
-                name: product.name,
-                price: product.price,
-                quantity: 1,
-                image_url: imageUrl,
-                slug: product.slug,
-              });
-            }}
-            disabled={!product.in_stock}
-            className="mt-2 w-full rounded-lg px-3 py-1.5 text-xs font-semibold"
-            style={{
-              background: product.in_stock ? 'var(--color-charcoal)' : 'rgba(42,32,22,0.1)',
-              color: product.in_stock ? 'var(--color-cream)' : 'rgba(42,32,22,0.4)',
-            }}
-          >
-            {product.in_stock ? 'Quick Add' : 'Unavailable'}
-          </button>
+          {isB2B ? (
+            <Link
+              href={`/trade/rfq/new?product=${encodeURIComponent(product.name)}`}
+              className="mt-2 w-full rounded-lg px-3 py-1.5 text-xs font-semibold text-center block transition-all duration-300"
+              style={{
+                background: 'var(--color-gold-muted)',
+                color: 'var(--color-cream)',
+              }}
+            >
+              Request Quote
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                addItem({
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  quantity: 1,
+                  image_url: imageUrl,
+                  slug: product.slug,
+                });
+              }}
+              disabled={!product.in_stock}
+              className="mt-2 w-full rounded-lg px-3 py-1.5 text-xs font-semibold"
+              style={{
+                background: product.in_stock ? 'var(--color-charcoal)' : 'rgba(42,32,22,0.1)',
+                color: product.in_stock ? 'var(--color-cream)' : 'rgba(42,32,22,0.4)',
+              }}
+            >
+              {product.in_stock ? 'Quick Add' : 'Unavailable'}
+            </button>
+          )}
         </div>
       </div>
     </div>

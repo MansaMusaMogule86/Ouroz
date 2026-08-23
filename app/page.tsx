@@ -1,49 +1,41 @@
 /**
  * OUROZ – Homepage
- * Section order matching reference screenshots:
- *   1. Brand Entry  — centered ⵣ + OUROZ + tagline + CTAs
- *   2. Atlas Hero   — "From the Atlas, to your table." + floating product cards
- *   3. Categories   — horizontal scroll of portrait cards
- *   4. Featured     — horizontal scroll of light product cards
- *   5. Footer
+ * Clean luxury Moroccan provisions layout:
+ *   1. Unified Hero — Centered ⵣ + OUROZ wordmark + tagline + description + CTAs
+ *   2. Categories   — Horizontal scroll of real B2B category cards
+ *   3. Featured     — Real imported catalog products (with "Request Price")
+ *   4. Footer
  */
 
 import Link from 'next/link';
 import OurozHeader from '@/components/shared/OurozHeader';
 import OurozBackground from '@/components/shared/OurozBackground';
 import CategoryShowcase from '@/components/shop/CategoryShowcase';
-import { createServerClient } from '@/lib/supabase-server';
+import { getProductCards } from '@/lib/shop-queries';
+import type { ProductCard as ProductCardType } from '@/types/shop';
 
-type HomepageProduct = {
-  id: string;
-  slug: string;
-  name: string;
-  base_price: number;
-  compare_at_price: number | null;
-  images: { url: string; position: number }[];
-};
-
-/* ── Reusable light glass card used in both hero and featured strip ── */
+/* ── Reusable light glass card used in featured strip ── */
 function LightCard({
   image, name, subtitle, price, compare, href,
 }: {
   image: string; name: string; subtitle?: string;
   price: number; compare?: number; href: string;
 }) {
+  const isRequestPrice = price <= 0;
   return (
     <Link href={href} className="group block flex-shrink-0">
       <div
-        className="rounded-2xl overflow-hidden flex flex-col aspect-[3/4]"
+        className="rounded-2xl overflow-hidden flex flex-col aspect-[3/4] transition-all duration-300 hover:translate-y-[-4px]"
         style={{
           background: 'rgba(253,248,240,0.68)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
           border: '1px solid rgba(255,255,255,0.55)',
-          boxShadow: '0 4px 24px rgba(42,32,22,0.09)',
+          boxShadow: '0 4px 20px rgba(42,32,22,0.06)',
         }}
       >
         {/* Image — flex-1 so it takes remaining space above the info panel */}
-        <div className="flex-1 flex items-center justify-center px-5 pt-5 pb-2 min-h-0">
+        <div className="flex-1 flex items-center justify-center px-5 pt-5 pb-2 min-h-0 relative">
           <img
             src={image}
             alt={name}
@@ -74,16 +66,24 @@ function LightCard({
             </p>
           )}
           <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span className="font-body font-bold" style={{ fontSize: 14, color: 'var(--color-charcoal)' }}>
-              {price}
-            </span>
-            <span className="font-body" style={{ fontSize: 10, color: 'rgba(42,32,22,0.45)' }}>
-              AED
-            </span>
-            {compare && compare > price && (
-              <span className="font-body line-through" style={{ fontSize: 10, color: 'rgba(42,32,22,0.28)' }}>
-                {compare}
+            {isRequestPrice ? (
+              <span className="font-body font-bold text-[11px] uppercase tracking-wider text-[var(--color-gold-muted)]">
+                Request Price
               </span>
+            ) : (
+              <>
+                <span className="font-body font-bold" style={{ fontSize: 14, color: 'var(--color-charcoal)' }}>
+                  {price}
+                </span>
+                <span className="font-body" style={{ fontSize: 10, color: 'rgba(42,32,22,0.45)' }}>
+                  AED
+                </span>
+                {compare && compare > price && (
+                  <span className="font-body line-through" style={{ fontSize: 10, color: 'rgba(42,32,22,0.28)' }}>
+                    {compare}
+                  </span>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -93,34 +93,7 @@ function LightCard({
 }
 
 export default async function HomePage() {
-  const supabase = await createServerClient();
-
-  const [{ data: featuredRaw }, { data: atlasRaw }] = await Promise.all([
-    supabase
-      .from('products')
-      .select('id, slug, name, base_price, compare_at_price, images:product_images(url, position)')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(6),
-    supabase
-      .from('products')
-      .select('id, slug, name, base_price, compare_at_price, images:product_images(url, position)')
-      .eq('is_active', true)
-      .eq('badge', 'bestseller')
-      .order('created_at', { ascending: false })
-      .limit(2),
-  ]);
-
-  const featuredProducts: HomepageProduct[] = (featuredRaw ?? []) as HomepageProduct[];
-  // Fall back to first 2 featured products if no bestseller-badged items exist
-  const atlasCards: HomepageProduct[] = ((atlasRaw?.length ?? 0) >= 2
-    ? atlasRaw
-    : featuredProducts.slice(0, 2)) as HomepageProduct[];
-
-  function getPrimaryImage(product: HomepageProduct): string {
-    const sorted = [...(product.images ?? [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-    return sorted[0]?.url ?? '/images/placeholder-product.jpg';
-  }
+  const { products: featuredProducts } = await getProductCards({ limit: 8 });
 
   return (
     <div className="relative min-h-screen bg-[var(--color-sahara)] overflow-hidden">
@@ -128,155 +101,81 @@ export default async function HomePage() {
       {/* Decorative background layers */}
       <OurozBackground showArch={false} showWatermark showDunes={false} />
 
-      {/* Header */}
-      <OurozHeader />
-
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 1 — Brand Entry
-          Centered ⵣ symbol, OUROZ wordmark, tagline, CTAs
+          HERO — Exact recreation of brand-entry design
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative z-10 flex flex-col items-center justify-center min-h-[88vh] px-6 pt-8">
+      <section className="relative z-10 min-h-[90vh] flex flex-col justify-between">
+        
+        {/* Left vertical architectural crease / margin spine */}
+        <div className="absolute left-0 top-0 bottom-0 w-6 sm:w-12 border-r border-[var(--color-charcoal)]/[0.08] pointer-events-none z-20 hidden sm:flex">
+          <div className="w-full h-full border-r border-[var(--color-charcoal)]/[0.04] bg-[var(--color-sahara-dark)]/10" />
+        </div>
 
-        {/* ⵣ symbol in soft halo */}
-        <div className="relative mb-8 flex items-center justify-center">
-          {/* Outer warm halo glow */}
-          <div
-            className="absolute -inset-20 rounded-full pointer-events-none"
-            style={{
-              background:
-                'radial-gradient(circle at 50% 50%, rgba(212,175,55,0.22) 0%, rgba(212,175,55,0.10) 35%, rgba(253,248,240,0) 75%)',
-              filter: 'blur(14px)',
-            }}
-          />
-          {/* Inner soft cream halo — no hard disc */}
-          <div
-            className="relative w-72 h-72 md:w-[26rem] md:h-[26rem] rounded-full flex items-center justify-center"
-            style={{
-              background:
-                'radial-gradient(circle at 50% 45%, rgba(255,250,242,0.95) 0%, rgba(253,248,240,0.6) 50%, rgba(253,248,240,0) 78%)',
-            }}
-          >
-            <img
-              src="/logo/logo.png"
-              alt="OUROZ"
-              className="relative w-[78%] h-[78%] object-contain select-none"
-              draggable={false}
-              style={{ filter: 'drop-shadow(0 8px 22px rgba(42,32,22,0.18))' }}
-            />
+        {/* Top Header */}
+        <OurozHeader />
+
+        {/* Center Content */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-12 max-w-4xl mx-auto w-full">
+          
+          {/* Luminous circular sun/halo with centered Amazigh ⵣ symbol */}
+          <div className="relative mb-6 flex items-center justify-center">
+            <div
+              className="relative w-52 h-52 sm:w-64 sm:h-64 rounded-full flex items-center justify-center"
+              style={{
+                background: 'radial-gradient(circle at 50% 50%, rgba(255, 252, 246, 0.98) 0%, rgba(248, 238, 222, 0.78) 50%, rgba(245, 230, 211, 0) 75%)',
+                boxShadow: '0 0 70px rgba(212, 175, 55, 0.10)',
+              }}
+            >
+              <img
+                src="/logo/logo.png"
+                alt="OUROZ"
+                className="w-24 h-24 sm:w-32 sm:h-32 object-contain select-none"
+                draggable={false}
+                style={{ filter: 'drop-shadow(0 4px 12px rgba(42,32,22,0.12))' }}
+              />
+            </div>
           </div>
+
+          {/* OUROZ wordmark */}
+          <h1
+            className="font-heading text-[var(--color-charcoal)] text-center leading-none tracking-tight mb-4"
+            style={{ fontSize: 'clamp(3.8rem, 9.5vw, 6.8rem)', fontWeight: 700, letterSpacing: '-0.01em' }}
+          >
+            OUROZ
+          </h1>
+
+          {/* Tagline: MOROCCAN PROVISIONS FROM the ATLAS */}
+          <p
+            className="font-heading uppercase tracking-[0.26em] text-xs sm:text-[13px] font-semibold mb-10"
+            style={{ color: '#B38E46' }}
+          >
+            MOROCCAN PROVISIONS FROM <span style={{ textTransform: 'lowercase', fontSize: '0.85em', letterSpacing: '0.12em' }}>the</span> ATLAS
+          </p>
+
+          {/* Pill Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full sm:w-auto">
+            <Link
+              href="/shop"
+              className="w-full sm:w-auto whitespace-nowrap py-3.5 px-9 bg-[#282019] text-[#F5E6D3] rounded-full text-center font-body font-semibold text-xs tracking-[0.08em] hover:bg-[#3d2e20] transition-all duration-300 shadow-md"
+            >
+              Explore Products
+            </Link>
+            <Link
+              href="/auth/login"
+              className="w-full sm:w-auto whitespace-nowrap py-3.5 px-9 border border-[#C9A84C]/50 bg-[#F5E6D3]/30 text-[#282019] rounded-full text-center font-body font-semibold text-xs tracking-[0.08em] hover:bg-[#F5E6D3]/80 hover:border-[#C9A84C] transition-all duration-300 shadow-sm"
+            >
+              Supplier Login
+            </Link>
+          </div>
+
         </div>
 
-        {/* OUROZ wordmark */}
-        <h1
-          className="font-heading text-[var(--color-charcoal)] text-center leading-none tracking-[-0.02em] mb-4"
-          style={{ fontSize: 'clamp(4rem, 12vw, 9rem)', fontWeight: 700 }}
-        >
-          OUROZ
-        </h1>
-
-        {/* Tagline */}
-        <p
-          className="font-body text-center uppercase tracking-[0.28em] mb-10"
-          style={{ fontSize: '0.7rem', color: 'rgba(201,168,76,0.75)', fontWeight: 600 }}
-        >
-          Moroccan Provisions from{' '}
-          <span style={{ fontSize: '0.6rem', textTransform: 'lowercase', letterSpacing: '0.1em' }}>
-            the
-          </span>{' '}
-          Atlas
-        </p>
-
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link
-            href="/shop"
-            className="whitespace-nowrap py-4 px-10 bg-[var(--color-charcoal)] text-[var(--color-sahara)] rounded-full text-center font-body font-bold text-[11px] uppercase tracking-[0.22em] hover:bg-[var(--color-charcoal)]/85 transition-all duration-400"
-          >
-            Explore Products
-          </Link>
-          <Link
-            href="/auth/login"
-            className="whitespace-nowrap py-4 px-10 border border-[var(--color-charcoal)]/25 text-[var(--color-charcoal)] rounded-full text-center font-body font-bold text-[11px] uppercase tracking-[0.22em] hover:bg-[var(--color-charcoal)] hover:text-[var(--color-sahara)] hover:border-[var(--color-charcoal)] transition-all duration-400"
-          >
-            Supplier Login
-          </Link>
-        </div>
+        {/* Bottom spacer */}
+        <div className="h-6" />
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 2 — "From the Atlas, to your table."
-          Left: text + CTAs | Right: 2 floating product cards
-          ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative z-10 py-20 lg:py-32">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-14">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-
-            {/* Left — text */}
-            <div>
-              <h2
-                className="font-heading text-[var(--color-charcoal)] leading-[1.08] mb-6"
-                style={{ fontSize: 'clamp(2.2rem, 5vw, 4rem)', fontWeight: 400, letterSpacing: '0.01em' }}
-              >
-                From the Atlas,
-                <br />
-                to your table.
-              </h2>
-              <p
-                className="font-body text-sm lg:text-base mb-8 max-w-md"
-                style={{ color: 'rgba(42,32,22,0.44)', lineHeight: 1.85, fontWeight: 400 }}
-              >
-                Curated Moroccan provisions—spices, oils, teas, and artisan goods sourced directly from cooperatives and family producers across Morocco.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link
-                  href="/shop"
-                  className="whitespace-nowrap py-3.5 px-9 bg-[var(--color-charcoal)] text-[var(--color-sahara)] rounded-full text-center font-body font-bold text-[10px] uppercase tracking-[0.22em] hover:bg-[var(--color-charcoal)]/85 transition-all duration-400"
-                >
-                  Explore Products
-                </Link>
-                <Link
-                  href="/auth/login"
-                  className="whitespace-nowrap py-3.5 px-9 border border-[var(--color-charcoal)]/25 text-[var(--color-charcoal)] rounded-full text-center font-body font-bold text-[10px] uppercase tracking-[0.22em] hover:bg-[var(--color-charcoal)] hover:text-[var(--color-sahara)] transition-all duration-400"
-                >
-                  Supplier Login
-                </Link>
-              </div>
-            </div>
-
-            {/* Right — 2 floating product cards */}
-            <div className="flex gap-4 justify-center lg:justify-end items-start pt-6 lg:pt-0">
-              {atlasCards[0] && (
-                <div className="w-[150px] lg:w-[175px] animate-float mt-8">
-                  <LightCard
-                    href={`/product/${atlasCards[0].slug}`}
-                    image={getPrimaryImage(atlasCards[0])}
-                    name={atlasCards[0].name}
-                    subtitle="Handcrafted in Morocco"
-                    price={atlasCards[0].base_price}
-                    compare={atlasCards[0].compare_at_price ?? undefined}
-                  />
-                </div>
-              )}
-              {atlasCards[1] && (
-                <div className="w-[150px] lg:w-[175px]" style={{ animation: 'float 6s ease-in-out infinite 1.2s' }}>
-                  <LightCard
-                    href={`/product/${atlasCards[1].slug}`}
-                    image={getPrimaryImage(atlasCards[1])}
-                    name={atlasCards[1].name}
-                    subtitle="Handcrafted in Morocco"
-                    price={atlasCards[1].base_price}
-                    compare={atlasCards[1].compare_at_price ?? undefined}
-                  />
-                </div>
-              )}
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════
-          SECTION 3 — Explore by Category
+          SECTION 2 — Explore by Category
           Horizontal scroll of light portrait category cards
           ═══════════════════════════════════════════════════════════════ */}
       <div className="relative z-10">
@@ -284,8 +183,8 @@ export default async function HomePage() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          SECTION 4 — Featured Products
-          Horizontal scroll of light glass product cards
+          SECTION 3 — Featured Products
+          Real imported catalog products with "Request Price"
           ═══════════════════════════════════════════════════════════════ */}
       <section className="relative z-10 py-16 lg:py-24">
 
@@ -302,8 +201,7 @@ export default async function HomePage() {
               className="font-body text-sm max-w-md mx-auto"
               style={{ color: 'rgba(42,32,22,0.42)', lineHeight: 1.75 }}
             >
-              Handpicked Moroccan provisions—spices, oils, teas, and artisan goods sourced
-              directly from cooperatives and family producers across Morocco.
+              Moroccan provisions, pantry goods and artisan collections available for trade inquiry.
             </p>
           </div>
         </div>
@@ -311,14 +209,14 @@ export default async function HomePage() {
         {/* Horizontal scroll */}
         <div className="overflow-x-auto scrollbar-hide">
           <div className="flex gap-4 px-6 lg:px-14 pb-2" style={{ width: 'max-content' }}>
-            {featuredProducts.map((p) => (
+            {featuredProducts.map((p: ProductCardType) => (
               <div key={p.id} className="w-[180px] lg:w-[210px]">
                 <LightCard
                   href={`/product/${p.slug}`}
-                  image={getPrimaryImage(p)}
+                  image={p.thumbnail_url ?? p.image_url ?? '/images/placeholder-product.jpg'}
                   name={p.name}
-                  subtitle="Handcrafted in Morocco"
-                  price={p.base_price}
+                  subtitle={p.supplier_name ?? 'Danat Al Jazeera'}
+                  price={p.price}
                   compare={p.compare_at_price ?? undefined}
                 />
               </div>
@@ -371,7 +269,7 @@ export default async function HomePage() {
             <div>
               <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-4">Sell</h4>
               <ul className="space-y-2.5 text-xs">
-                <li><Link href="/supplier/register" className="hover:text-white/70 transition-colors">Become a Supplier</Link></li>
+                <li><Link href="/suppliers" className="hover:text-white/70 transition-colors">Become a Supplier</Link></li>
                 <li><Link href="/suppliers" className="hover:text-white/70 transition-colors">Supplier Directory</Link></li>
               </ul>
             </div>

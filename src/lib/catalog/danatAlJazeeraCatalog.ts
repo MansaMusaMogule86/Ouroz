@@ -72,7 +72,25 @@ export function getDanatProductsByGroup(group: string): DanatProduct[] {
   return DANAT_PRODUCTS.filter((product) => product.product_group === group);
 }
 
+const GROUP_IMAGE_MAP: Record<string, string> = {
+  'Tea and coffee': 'tea-and-coffee.svg',
+  'Sugar': 'sugar.svg',
+  'Tuna and sardines': 'tuna-and-sardines.svg',
+  'Biscuits and chocolate': 'biscuits-and-chocolate.svg',
+  'Couscous, pasta, semolina, and flour': 'couscous-pasta-semolina-flour.svg',
+  'Syrups, beverages, vinegar, jam, and tomato paste': 'syrups-beverages-vinegar-jam-tomato-paste.svg',
+  'Olives, preserved lemon, harissa, and khleaa': 'olives-preserved-lemon-harissa-khleaa.svg',
+  'Baking and dessert products': 'baking-and-dessert-products.svg',
+  'Sauces and dressings': 'sauces-and-dressings.svg',
+  'Tagines and ceramics': 'tagines-and-ceramics.svg',
+  'Tea cups, tea trays, couscous pots, and teapots': 'tea-cups-tea-trays-couscous-pots-and-teapots.svg',
+};
+
 export function getDanatGroupPlaceholder(group: string): string {
+  const filename = GROUP_IMAGE_MAP[group];
+  if (filename) {
+    return `/images/catalog/danat-al-jazeera/groups/${filename}`;
+  }
   const slug = group
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')

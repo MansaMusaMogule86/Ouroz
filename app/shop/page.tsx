@@ -54,9 +54,9 @@ export default async function ShopPage({ searchParams }: Props) {
     }[lang];
 
     const subheadline = {
-        en: 'Sourced directly from cooperatives and producers across the Atlas.',
-        ar: 'مصدرها مباشرة من التعاونيات والمنتجين في جميع أنحاء الأطلس.',
-        fr: 'Provenant directement de coopératives et de producteurs de l\'Atlas.',
+        en: 'Discover Moroccan provisions, pantry products and artisan goods available through OUROZ suppliers.',
+        ar: 'اكتشف المؤن المغربية ومنتجات المؤونة والسلع الحرفية المتوفرة عبر موردي أوروز.',
+        fr: 'Découvrez les provisions marocaines, produits d\'épicerie et articles artisanaux disponibles auprès des fournisseurs OUROZ.',
     }[lang];
 
     return (

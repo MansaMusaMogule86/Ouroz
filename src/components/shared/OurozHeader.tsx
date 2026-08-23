@@ -10,36 +10,33 @@ const NAV_LINKS = [
 
 export default function OurozHeader() {
   return (
-    <header className="sticky top-0 w-full z-[60] bg-[var(--color-sahara)]/85 backdrop-blur-md border-b border-[var(--color-charcoal)]/[0.04]">
-      <div className="max-w-[1440px] mx-auto flex items-center justify-between px-8 lg:px-14 h-[72px]">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 shrink-0">
-          <div className="w-8 h-8 rounded-full border border-[var(--color-charcoal)]/15 flex items-center justify-center overflow-hidden bg-white">
-            <img src="/logo/logo.png" alt="OUROZ" className="w-[82%] h-[82%] object-contain" draggable={false} />
+    <header className="w-full z-[60] py-6 px-8 lg:px-16">
+      <div className="max-w-[1440px] mx-auto flex items-center justify-between">
+        {/* Logo with ⵣ symbol */}
+        <Link href="/" className="flex items-center gap-3 shrink-0 group">
+          <div className="w-7 h-7 rounded-full border border-[var(--color-charcoal)]/20 flex items-center justify-center overflow-hidden bg-transparent">
+            <span className="text-xs font-serif text-[var(--color-charcoal)]">ⵣ</span>
           </div>
           <span
-            className="text-[15px] font-heading tracking-[0.35em] uppercase"
+            className="text-[14px] font-heading tracking-[0.28em] uppercase text-[var(--color-charcoal)]"
             style={{ fontWeight: 600 }}
           >
             OUROZ
           </span>
         </Link>
 
-        {/* Center Nav */}
-        <nav className="hidden lg:flex items-center gap-10">
+        {/* Navigation Links */}
+        <nav className="flex items-center gap-6 sm:gap-10">
           {NAV_LINKS.map(link => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-[10px] font-body font-bold uppercase tracking-[0.22em] text-[var(--color-charcoal)]/50 hover:text-[var(--color-charcoal)] transition-colors duration-300"
+              className="text-[10px] sm:text-[11px] font-body uppercase tracking-[0.22em] text-[var(--color-charcoal)]/60 hover:text-[var(--color-charcoal)] transition-colors duration-300 font-medium"
             >
               {link.label}
             </Link>
           ))}
         </nav>
-
-        {/* Right spacer for symmetry */}
-        <div className="w-[100px] shrink-0" />
       </div>
     </header>
   );

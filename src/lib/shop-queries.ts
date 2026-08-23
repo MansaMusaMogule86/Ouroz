@@ -7,6 +7,7 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { Category, SubCategory, ProductCard, Product, LangCode } from '@/types/shop';
 import { BAB_CATEGORIES, BAB_PRODUCTS, BAB_SEARCH_ALIASES, BAB_SUPPLIER } from '@/lib/catalog/atlasSoukCatalog';
+import { DANAT_PRODUCTS, DANAT_SUPPLIER, getDanatGroupPlaceholder } from '@/lib/catalog/danatAlJazeeraCatalog';
 
 const fallbackUrl = 'https://placeholder-project.supabase.co';
 const fallbackAnon = 'placeholder-anon-key';
@@ -73,139 +74,201 @@ function fallbackProductCards(query: ProductCardsQuery): { products: ProductCard
     lang = 'en',
     categorySlug,
     supplierSlug,
-    stock = 'all',
     featuredOnly = false,
-    minPrice,
-    maxPrice,
-    complianceOnly = false,
     search,
     limit = 24,
     offset = 0,
     sortBy = 'featured',
   } = query;
 
-  let products = BAB_PRODUCTS.filter((product) => {
-    if (categorySlug && product.categorySlug !== categorySlug) return false;
-    if (supplierSlug && supplierSlug !== BAB_SUPPLIER.slug) return false;
-    if (featuredOnly && !product.featured) return false;
-    if (typeof minPrice === 'number' && product.priceAed < minPrice) return false;
-    if (typeof maxPrice === 'number' && product.priceAed > maxPrice) return false;
-    if (complianceOnly && !product.requiresComplianceReview) return false;
-    if (stock === 'in-stock' && product.stockStatus !== 'in_stock') return false;
-    if (stock === 'low-stock' && product.stockStatus !== 'low_stock') return false;
-    if (stock === 'out-of-stock' && product.stockStatus !== 'out_of_stock') return false;
+  let products = DANAT_PRODUCTS.filter((product) => {
+    if (categorySlug && product.product_category !== categorySlug && !product.product_group.toLowerCase().includes(categorySlug.toLowerCase())) return false;
+    if (supplierSlug && supplierSlug !== DANAT_SUPPLIER.slug) return false;
     if (search) {
       const searchKey = search.trim().toLowerCase();
-      const aliases = BAB_SEARCH_ALIASES[searchKey] ?? [searchKey];
-      const haystack = [product.name, product.slug, product.categorySlug, BAB_SUPPLIER.name, ...product.tags].join(' ').toLowerCase();
-      if (!aliases.some((alias) => haystack.includes(alias.toLowerCase()))) return false;
+      const haystack = [
+        product.english_name ?? '',
+        product.arabic_name ?? '',
+        product.original_name ?? '',
+        product.brand ?? '',
+        product.product_group,
+        product.slug,
+        DANAT_SUPPLIER.name,
+      ].join(' ').toLowerCase();
+      if (!haystack.includes(searchKey)) return false;
     }
     return true;
   });
 
   products = [...products].sort((left, right) => {
+    const leftName = left.english_name || left.original_name || left.slug;
+    const rightName = right.english_name || right.original_name || right.slug;
     switch (sortBy) {
-      case 'featured':
-        return Number(right.featured) - Number(left.featured) || right.priceAed - left.priceAed || left.name.localeCompare(right.name);
-      case 'price_asc':
-        return left.priceAed - right.priceAed;
-      case 'price_desc':
-        return right.priceAed - left.priceAed;
       case 'name':
-        return left.name.localeCompare(right.name);
+        return leftName.localeCompare(rightName);
       case 'name_desc':
-        return right.name.localeCompare(left.name);
+        return rightName.localeCompare(leftName);
       default:
-        return left.name.localeCompare(right.name);
+        return 0;
     }
   });
 
   const paged = products.slice(offset, offset + limit);
 
   return {
-    products: paged.map((product) => ({
-      id: product.slug,
-      slug: product.slug,
-      sku: product.sku,
-      name: product.name,
-      price: product.priceAed,
-      currency: product.currency,
-      image_url: product.imagePaths[0],
-      thumbnail_url: product.thumbnailPath,
-      supplier_name: BAB_SUPPLIER.name,
-      supplier_slug: BAB_SUPPLIER.slug,
-      tags: product.tags,
-      stock_status: product.stockStatus,
-      inventory_quantity: product.inventoryQty,
-      is_featured: product.featured,
-      requires_compliance_review: product.requiresComplianceReview,
-      category_slug: product.categorySlug,
-      category_name: BAB_CATEGORIES.find((category) => category.slug === product.categorySlug)?.name,
-      brand_slug: BAB_SUPPLIER.slug,
-      origin: product.countryOfOrigin,
-      in_stock: product.stockStatus !== 'out_of_stock',
-      badge: product.requiresComplianceReview ? 'Origin passport pending' : 'Origin passport',
-    })),
+    products: paged.map((product) => {
+      const name = lang === 'ar' && product.arabic_name
+        ? product.arabic_name
+        : (product.english_name || product.original_name || product.slug);
+      
+      const placeholderImg = getDanatGroupPlaceholder(product.product_group);
+
+      return {
+        id: product.id,
+        slug: product.slug,
+        sku: product.id.toUpperCase(),
+        name,
+        price: 0, // Unverified price: displayed as "Request Price"
+        currency: 'AED',
+        image_url: placeholderImg,
+        thumbnail_url: placeholderImg,
+        supplier_name: DANAT_SUPPLIER.name,
+        supplier_slug: DANAT_SUPPLIER.slug,
+        tags: [product.product_group, product.brand ?? '', product.product_category].filter(Boolean),
+        stock_status: 'in_stock',
+        inventory_quantity: undefined,
+        is_featured: featuredOnly,
+        requires_compliance_review: product.manual_review_required,
+        category_slug: product.product_category,
+        category_name: product.product_group,
+        brand_slug: product.brand ? product.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-') : DANAT_SUPPLIER.slug,
+        origin: 'Morocco',
+        in_stock: true,
+        badge: product.brand ?? 'Imported B2B',
+      };
+    }),
     total: products.length,
   };
 }
 
 function fallbackProductBySlug(slug: string, lang: LangCode = 'en'): Product | null {
-  const product = BAB_PRODUCTS.find((item) => item.slug === slug);
-  if (!product) return null;
+  const product = DANAT_PRODUCTS.find((item) => item.slug === slug);
+  if (!product) {
+    const bab = BAB_PRODUCTS.find((item) => item.slug === slug);
+    if (!bab) return null;
+    return {
+      id: bab.slug,
+      slug: bab.slug,
+      sku: bab.sku,
+      name: bab.name,
+      short_description: `${bab.name} available through OUROZ suppliers.`,
+      description: `${bab.name} is available for quotation and procurement through OUROZ verified suppliers.`,
+      price: 0,
+      currency: 'AED',
+      origin: 'Morocco',
+      origin_region: undefined,
+      weight: undefined,
+      certifications: [],
+      badge: 'Request Price',
+      in_stock: true,
+      image_url: bab.imagePaths[0],
+      thumbnail_url: bab.thumbnailPath,
+      stock_status: 'in_stock',
+      inventory_quantity: undefined,
+      is_featured: bab.featured,
+      tags: bab.tags,
+      requires_compliance_review: false,
+      care_information: bab.careInformation,
+      shipping_information: bab.shippingInformation,
+      storage_information: bab.storageInformation,
+      return_eligible: true,
+      minimum_order_quantity: 1,
+      wholesale_ready: true,
+      product_review_status: 'approved',
+      compliance_review_status: 'approved',
+      compliance_notes: '',
+      brand: { name: BAB_SUPPLIER.name, slug: BAB_SUPPLIER.slug },
+      category: {
+        name: BAB_CATEGORIES.find((category) => category.slug === bab.categorySlug)?.name ?? bab.categorySlug,
+        slug: bab.categorySlug,
+      },
+      supplier: { name: BAB_SUPPLIER.name, slug: BAB_SUPPLIER.slug },
+      images: bab.imagePaths.map((url, index) => ({
+        id: `${bab.slug}-${index}`,
+        url,
+        alt: bab.imageAlt,
+        position: index,
+      })),
+      variants: [
+        {
+          id: `${bab.slug}-variant`,
+          name: 'Standard',
+          price: 0,
+          in_stock: true,
+          sku: `${bab.sku}-STD`,
+        },
+      ],
+    };
+  }
+
+  const name = lang === 'ar' && product.arabic_name
+    ? product.arabic_name
+    : (product.english_name || product.original_name || product.slug);
+
+  const placeholderImg = getDanatGroupPlaceholder(product.product_group);
 
   return {
-    id: product.slug,
+    id: product.id,
     slug: product.slug,
-    sku: product.sku,
-    name: product.name,
-    short_description: product.shortDescription,
-    description: product.longDescription,
-    price: product.priceAed,
-    currency: product.currency,
-    origin: product.countryOfOrigin,
+    sku: product.id.toUpperCase(),
+    name,
+    short_description: `${name} — authentic Moroccan provision supplied by ${DANAT_SUPPLIER.name}.`,
+    description: `${name} is supplied by ${DANAT_SUPPLIER.name} under ${product.product_group}. Trade inquiries, specifications, and wholesale pricing are provided upon request.`,
+    price: 0, // Unverified price: Request Price
+    currency: 'AED',
+    origin: 'Morocco',
     origin_region: undefined,
     weight: undefined,
     certifications: [],
-    badge: product.requiresComplianceReview ? 'Origin passport pending' : 'Origin passport',
-    in_stock: product.stockStatus !== 'out_of_stock',
-    image_url: product.imagePaths[0],
-    thumbnail_url: product.thumbnailPath,
-    stock_status: product.stockStatus,
-    inventory_quantity: product.inventoryQty,
-    is_featured: product.featured,
-    tags: product.tags,
-    requires_compliance_review: product.requiresComplianceReview,
-    care_information: product.careInformation,
-    shipping_information: product.shippingInformation,
-    storage_information: product.storageInformation,
-    return_eligible: product.returnEligible,
-    minimum_order_quantity: product.minimumOrderQty,
-    wholesale_ready: product.wholesaleReady,
-    product_review_status: product.productReviewStatus,
-    compliance_review_status: product.requiresComplianceReview ? 'pending' : 'approved',
-    compliance_notes: product.complianceNotes,
-    brand: { name: BAB_SUPPLIER.name, slug: BAB_SUPPLIER.slug },
+    badge: product.brand ?? 'Imported B2B',
+    in_stock: true,
+    image_url: placeholderImg,
+    thumbnail_url: placeholderImg,
+    stock_status: 'in_stock',
+    inventory_quantity: undefined,
+    is_featured: false,
+    tags: [product.product_group, product.brand ?? '', product.product_category].filter(Boolean),
+    requires_compliance_review: product.manual_review_required,
+    care_information: 'Store in a cool, dry place. Observe packaging instructions.',
+    shipping_information: 'Available for UAE delivery and wholesale dispatch.',
+    storage_information: 'Standard dry/ambient storage unless specified on product packaging.',
+    return_eligible: true,
+    minimum_order_quantity: 1,
+    wholesale_ready: true,
+    product_review_status: 'approved',
+    compliance_review_status: 'approved',
+    compliance_notes: '',
+    brand: { name: product.brand || DANAT_SUPPLIER.name, slug: product.brand?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || DANAT_SUPPLIER.slug },
     category: {
-      name: BAB_CATEGORIES.find((category) => category.slug === product.categorySlug)?.name ?? product.categorySlug,
-      slug: product.categorySlug,
+      name: product.product_group,
+      slug: product.product_category,
     },
-    supplier: { name: BAB_SUPPLIER.name, slug: BAB_SUPPLIER.slug },
-    images: product.imagePaths.map((url, index) => ({
-      id: `${product.slug}-${index}`,
-      url,
-      alt: product.imageAlt,
-      position: index,
-    })),
-    variants: [
+    supplier: { name: DANAT_SUPPLIER.name, slug: DANAT_SUPPLIER.slug },
+    images: [
       {
-        id: `${product.slug}-variant`,
-        name: 'Standard',
-        price: product.priceAed,
-        in_stock: product.stockStatus !== 'out_of_stock',
-        sku: `${product.sku}-STD`,
+        id: `${product.slug}-0`,
+        url: placeholderImg,
+        alt: name,
+        position: 0,
       },
     ],
+    variants: product.variants.map((v) => ({
+      id: v.id,
+      name: v.pack_size || 'Standard Case',
+      price: 0,
+      in_stock: true,
+      sku: v.id,
+    })),
   };
 }
 

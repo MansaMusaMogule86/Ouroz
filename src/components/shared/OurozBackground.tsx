@@ -101,14 +101,14 @@ export default function OurozBackground({
 
       {/* 4. OUROZ logo watermark — right side, large, faded */}
       {showWatermark && (
-        <div className="absolute right-[-60px] lg:right-[-40px] top-[40px] z-[2] pointer-events-none select-none">
+        <div className="absolute right-[-20px] lg:right-[60px] top-[100px] lg:top-[120px] z-[2] pointer-events-none select-none">
           <img
             src="/logo/logo.png"
             alt=""
             aria-hidden="true"
             draggable={false}
-            className="w-[320px] lg:w-[460px] h-auto opacity-[0.10]"
-            style={{ filter: 'saturate(0.85)' }}
+            className="w-[280px] sm:w-[380px] lg:w-[460px] h-auto opacity-[0.12]"
+            style={{ filter: 'contrast(0.9) saturate(0.9)' }}
           />
         </div>
       )}

@@ -113,17 +113,25 @@ export default function ProductDetailClient({ product, defaultVariant, lang }: P
 
       {/* ── Price ── */}
       <div className="flex items-baseline gap-3 flex-wrap">
-        <span className="text-3xl font-bold font-body" style={{ color: 'var(--color-gold)' }}>
-          {product.currency}&nbsp;{price.toFixed(2)}
-        </span>
-        {compareAt && compareAt > price && (
+        {price <= 0 ? (
+          <span className="text-2xl font-bold font-body uppercase tracking-wider text-[var(--color-gold-muted)]">
+            Request Price
+          </span>
+        ) : (
           <>
-            <span className="text-xl font-body line-through" style={{ color: 'var(--color-charcoal)', opacity: 0.22 }}>
-              {compareAt.toFixed(2)}
+            <span className="text-3xl font-bold font-body" style={{ color: 'var(--color-gold)' }}>
+              {product.currency}&nbsp;{price.toFixed(2)}
             </span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full font-body bg-emerald-500/10 text-emerald-700">
-              Save {discount}%
-            </span>
+            {compareAt && compareAt > price && (
+              <>
+                <span className="text-xl font-body line-through" style={{ color: 'var(--color-charcoal)', opacity: 0.22 }}>
+                  {compareAt.toFixed(2)}
+                </span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full font-body bg-emerald-500/10 text-emerald-700">
+                  Save {discount}%
+                </span>
+              </>
+            )}
           </>
         )}
       </div>
@@ -157,7 +165,7 @@ export default function ProductDetailClient({ product, defaultVariant, lang }: P
                 }}
               >
                 {v.name}
-                {v.price !== product.price && (
+                {v.price > 0 && v.price !== product.price && (
                   <span className="ml-1.5 text-[10px] opacity-50">
                     {product.currency} {v.price.toFixed(0)}
                   </span>
@@ -168,7 +176,7 @@ export default function ProductDetailClient({ product, defaultVariant, lang }: P
         </div>
       )}
 
-      {/* ── Quantity + Add to cart ── */}
+      {/* ── Quantity + Add to cart / Request Quote ── */}
       <div className="flex items-stretch gap-3">
 
         {/* Qty stepper */}
@@ -206,32 +214,45 @@ export default function ProductDetailClient({ product, defaultVariant, lang }: P
           {wishlisted ? '♥ Saved' : '♡ Wishlist'}
         </button>
 
-        {/* Add to cart */}
-        <button
-          onClick={handleAdd}
-          disabled={!inStock || adding}
-          className={`flex-1 py-3.5 rounded-xl text-[11px] font-body font-semibold uppercase tracking-[0.2em] transition-all duration-200 ${
-            inStock && !adding && !justAdded ? 'active:scale-[0.99]' : ''
-          }`}
-          style={
-            justAdded ? {
-              background: 'var(--color-gold)',
-              color: 'white',
-            } : inStock ? {
-              background: 'var(--color-charcoal)',
-              color: 'var(--color-sahara)',
-            } : {
-              background: 'rgba(42,32,22,0.08)',
-              color: 'rgba(42,32,22,0.3)',
-              cursor: 'not-allowed',
+        {/* Action: Request Quote if unverified price, otherwise Add to Cart */}
+        {price <= 0 ? (
+          <Link
+            href={`/trade/rfq/new?product=${encodeURIComponent(product.name)}`}
+            className="flex-1 py-3.5 rounded-xl text-[11px] font-body font-semibold uppercase tracking-[0.2em] transition-all duration-200 text-center flex items-center justify-center shadow-sm hover:opacity-90"
+            style={{
+              background: 'var(--color-gold-muted)',
+              color: 'var(--color-cream)',
+            }}
+          >
+            Request Quote
+          </Link>
+        ) : (
+          <button
+            onClick={handleAdd}
+            disabled={!inStock || adding}
+            className={`flex-1 py-3.5 rounded-xl text-[11px] font-body font-semibold uppercase tracking-[0.2em] transition-all duration-200 ${
+              inStock && !adding && !justAdded ? 'active:scale-[0.99]' : ''
+            }`}
+            style={
+              justAdded ? {
+                background: 'var(--color-gold)',
+                color: 'white',
+              } : inStock ? {
+                background: 'var(--color-charcoal)',
+                color: 'var(--color-sahara)',
+              } : {
+                background: 'rgba(42,32,22,0.08)',
+                color: 'rgba(42,32,22,0.3)',
+                cursor: 'not-allowed',
+              }
             }
-          }
-        >
-          {justAdded ? '✓ Added'
-           : adding   ? T.adding[lang]
-           : inStock  ? T.addToCart[lang]
-           :            T.outOfStock[lang]}
-        </button>
+          >
+            {justAdded ? '✓ Added'
+             : adding   ? T.adding[lang]
+             : inStock  ? T.addToCart[lang]
+             :            T.outOfStock[lang]}
+          </button>
+        )}
 
       </div>
 
